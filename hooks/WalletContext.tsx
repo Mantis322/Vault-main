@@ -1,9 +1,8 @@
-"use client"; // Bu satırı ekleyin
+"use client"; 
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { BrowserProvider, JsonRpcSigner } from 'ethers';
 
-// Window arayüzüne ethereum özelliğini ekleyin
 declare global {
   interface Window {
     ethereum?: any;
