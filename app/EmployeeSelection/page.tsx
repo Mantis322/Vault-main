@@ -5,11 +5,13 @@ import { useWallet } from '../../hooks/WalletContext';
 import { ethers } from 'ethers';
 import { CONTRACT_ABI } from '../../hooks/WalletABI';
 import { CONTRACT_ADDRESS } from '../../hooks/ContractAdress';
+import Link from 'next/link';
 
 export default function EmployeeSelection() {
   const [selectedVault, setSelectedVault] = useState('');
-  const [vaults, setVaults] = useState<Array<{ id: string, name: string, claimableBalance: string }>>([]);
+  const [vaults, setVaults] = useState<Array<{ id: string, name: string, claimableBalance: string, claimableBalanceWei: string }>>([]);
   const [loading, setLoading] = useState(false);
+  const [claimLoading, setClaimLoading] = useState(false);
   const { walletAddress, provider, connectWallet, disconnectWallet } = useWallet();
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function EmployeeSelection() {
         return;
       }
   
-      const vaultPromises = vaultNumbers.map(async  (vaultId: Number) => {
+      const vaultPromises = vaultNumbers.map(async (vaultId: Number) => {
         console.log("Fetching details for vault ID:", vaultId.toString());
         const name = await contract.getVaultName(vaultId);
         const employeeId = await contract.getVaultEmployeID(vaultId);
@@ -48,20 +50,63 @@ export default function EmployeeSelection() {
         
         console.log(`Vault ${vaultId}: Name = ${name}, Balance = ${ethers.formatEther(balance)} ETH`);
         
-        return {
-          id: vaultId.toString(),
-          name: name,
-          claimableBalance: ethers.formatEther(balance) + ' ETH'
-        };
+        // Sadece bakiyesi 0'dan büyük olan vault'ları döndür
+        if (Number(ethers.formatEther(balance)) > 0) {
+          return {
+            id: vaultId.toString(),
+            name: name,
+            claimableBalance: ethers.formatEther(balance) + ' ETH',
+            claimableBalanceWei: balance.toString()
+          };
+        }
+        return null;
       });
   
-      const vaultDetails = await Promise.all(vaultPromises);
+      const vaultDetails = (await Promise.all(vaultPromises)).filter(vault => vault !== null);
       console.log("All vault details:", vaultDetails);
       setVaults(vaultDetails);
     } catch (error) {
       console.error("Error fetching vaults:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClaim = async () => {
+    if (!provider || !walletAddress || !selectedVault) {
+      console.log("Provider, wallet address or selected vault is missing");
+      return;
+    }
+
+    setClaimLoading(true);
+    try {
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+      const selectedVaultData = vaults.find(v => v.id === selectedVault);
+      if (!selectedVaultData) {
+        throw new Error("Selected vault data not found");
+      }
+
+      const employeeId = await contract.getVaultEmployeID(selectedVault);
+      console.log("Employee ID:", employeeId.toString());
+
+      const tx = await contract.employeeWithdraw(
+        selectedVault,
+        selectedVaultData.claimableBalanceWei,
+        employeeId
+      );
+
+      console.log("Transaction sent:", tx.hash);
+      await tx.wait();
+      console.log("Transaction confirmed");
+
+      // Refresh vaults after successful claim
+      await fetchVaults();
+    } catch (error) {
+      console.error("Error claiming:", error);
+    } finally {
+      setClaimLoading(false);
     }
   };
 
@@ -88,9 +133,11 @@ export default function EmployeeSelection() {
       `}</style>
       
       <header className="flex justify-between items-center p-6 bg-black bg-opacity-60 backdrop-blur-sm">
+      <Link href="/">
         <h1 className="text-4xl font-bold tracking-wider text-purple-400" style={{ fontFamily: "'Orbitron', sans-serif" }}>
           VAULT
         </h1>
+        </Link>
         {walletAddress ? (
           <div className="flex items-center">
             <span className="mr-4 text-purple-300">{`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}</span>
@@ -110,14 +157,14 @@ export default function EmployeeSelection() {
           </button>
         )}
       </header>
-
+        
       <div className="flex-1 galaxy-bg p-12">
         <h2 className="text-3xl font-semibold mb-8 text-center">Select Employee Vault to Claim</h2>
         <div className="max-w-2xl mx-auto bg-black bg-opacity-70 p-6 rounded-lg">
           {loading ? (
             <p className="text-center">Loading vaults...</p>
           ) : vaults.length === 0 ? (
-            <p className="text-center">You are not included in any Vault</p>
+            <p className="text-center">You don't have any claimable balance in any Vault</p>
           ) : (
             <>
               {vaults.map((vault) => (
@@ -139,13 +186,14 @@ export default function EmployeeSelection() {
               ))}
               <button 
                 className={`w-full mt-6 py-2 rounded-lg transition-colors ${
-                  selectedVault 
+                  selectedVault && !claimLoading
                     ? 'bg-purple-600 hover:bg-purple-700' 
                     : 'bg-gray-600 cursor-not-allowed'
                 }`}
-                disabled={!selectedVault}
+                disabled={!selectedVault || claimLoading}
+                onClick={handleClaim}
               >
-                Claim
+                {claimLoading ? 'Claiming...' : 'Claim'}
               </button>
             </>
           )}

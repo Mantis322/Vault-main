@@ -68,9 +68,11 @@ export default function EmployerVaultSelection() {
       `}</style>
       
       <header className="flex justify-between items-center p-6 bg-black bg-opacity-60 backdrop-blur-sm">
+      <Link href="/">
         <h1 className="text-4xl font-bold tracking-wider text-purple-400" style={{ fontFamily: "'Orbitron', sans-serif" }}>
           VAULT
           </h1>
+          </Link>
         {walletAddress ? (
           <div className="flex items-center">
             <span className="mr-4 text-purple-300">{`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}</span>
