@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Image from "next/image";
 import Link from 'next/link';
+import { ethers } from 'ethers';
 import { useWallet } from '../../hooks/WalletContext';
 import { CONTRACT_ABI } from '../../hooks/WalletABI';
 import { CONTRACT_ADDRESS } from '../../hooks/ContractAdress';
@@ -14,12 +15,63 @@ export default function EmployerVaultSelection() {
   const [creationStatus, setCreationStatus] = useState<'idle' | 'success' | 'fail'>('idle');
   const [createdVaultName, setCreatedVaultName] = useState('');
   const { walletAddress, provider, connectWallet, disconnectWallet } = useWallet();
+  const [loading, setLoading] = useState(false);
+  const [vaults, setVaults] = useState<Array<{ id: string, name: string, balance: string}>>([]);
 
-  const vaults = [
-    { id: 'EV001', name: 'Employer Vault Alpha', balance: '1000 ETH' },
-    { id: 'EV002', name: 'Employer Vault Beta', balance: '750 ETH' },
-    { id: 'EV003', name: 'Employer Vault Gamma', balance: '1250 ETH' },
-  ];
+  useEffect(() => {
+    if (walletAddress && provider) {
+      fetchVaults();
+    }
+  }, [walletAddress, provider]);
+
+  const fetchVaults = async () => {
+    if (!provider || !walletAddress) {
+      console.log("Provider or wallet address is missing");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      
+      console.log("Calling getEmployeerVaultNumbers for address:", walletAddress);
+      const vaultNumbers = await contract.getEmployerVaultNumbers();
+      console.log("Received vault numbers:", vaultNumbers);
+  
+      if (vaultNumbers.length === 0) {
+        console.log("No vaults found for this employer");
+        setVaults([]);
+        setLoading(false);
+        return;
+      }
+  
+      const vaultPromises = vaultNumbers.map(async (vaultId: Number) => {
+        console.log("Fetching details for vault ID:", vaultId.toString());
+        const name = await contract.getVaultName(vaultId);
+        const balance = await contract.getTotalDeposit(vaultId);
+        
+        console.log(`Vault ${vaultId}: Name = ${name}, Balance = ${ethers.formatEther(balance)} ETH`);
+      
+          return {
+            id: vaultId.toString(),
+            name: name,
+            balance: balance.toString()
+          };
+        
+        
+      });
+  
+      const vaultDetails = (await Promise.all(vaultPromises)).filter(vault => vault !== null);
+      console.log("All vault details:", vaultDetails);
+      setVaults(vaultDetails);
+    } catch (error) {
+      console.error("Error fetching vaults:", error);
+    } finally {
+      setLoading(false);
+    }
+
+  };
 
   const handleCreateVault = () => {
     // Simulate vault creation with 50% success rate
@@ -106,43 +158,55 @@ export default function EmployerVaultSelection() {
 
       <div className="flex-1 galaxy-bg p-12">
         <h2 className="text-3xl font-semibold mb-8 text-center">Select or Create Employer Vault</h2>
-        <div className="max-w-2xl mx-auto bg-black bg-opacity-70 p-6 rounded-lg">
-          {vaults.map((vault) => (
-            <div 
-              key={vault.id}
-              className={`p-4 mb-4 rounded-lg cursor-pointer transition-all ${
-                selectedVault === vault.id 
-                  ? 'bg-purple-700' 
-                  : 'bg-gray-800 hover:bg-gray-700'
-              }`}
-              onClick={() => setSelectedVault(vault.id)}
-            >
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-xl font-semibold">{vault.name}</h3>
-                <span className="text-sm text-purple-400">ID: {vault.id}</span>
+        {vaults.length > 0 ? (
+          <div className="max-w-2xl mx-auto bg-black bg-opacity-70 p-6 rounded-lg">
+            {vaults.map((vault) => (
+              <div 
+                key={vault.id}
+                className={`p-4 mb-4 rounded-lg cursor-pointer transition-all ${
+                  selectedVault === vault.id 
+                    ? 'bg-purple-700' 
+                    : 'bg-gray-800 hover:bg-gray-700'
+                }`}
+                onClick={() => setSelectedVault(vault.id)}
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-xl font-semibold">{vault.name}</h3>
+                  <span className="text-sm text-purple-400">ID: {vault.id}</span>
+                </div>
+                <p className="text-gray-300">Balance: {vault.balance}</p>
               </div>
-              <p className="text-gray-300">Balance: {vault.balance}</p>
+            ))}
+            <div className="flex justify-between mt-6">
+              <button 
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                onClick={() => setShowModal(true)}
+              >
+                + Create New Vault
+              </button>
+              <button
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  selectedVault 
+                    ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer' 
+                    : 'bg-gray-600 cursor-not-allowed'
+                }`}
+                onClick={handleVaultDetailsModal}
+              >
+                Continue
+              </button>
             </div>
-          ))}
-          <div className="flex justify-between mt-6">
+          </div>
+        ) : (
+          <div className="max-w-2xl mx-auto bg-black bg-opacity-70 p-6 rounded-lg text-center">
+            <p>You don't have any Vaults yet. You can create a new Vault using the "Create New Vault" button.</p>
             <button 
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors mt-4"
               onClick={() => setShowModal(true)}
             >
-              + Create New Vault
+              Create New Vault
             </button>
-            <button
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                selectedVault 
-                  ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer' 
-                  : 'bg-gray-600 cursor-not-allowed'
-              }`}
-              onClick={handleVaultDetailsModal}
-            >
-              Continue
-              </button>
           </div>
-        </div>
+        )}
       </div>
 
       {showModal && (
