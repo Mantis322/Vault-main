@@ -55,7 +55,7 @@ export default function EmployerVaultSelection() {
             id: vaultId.toString(),
             name: name,
             balance: ethers.formatEther(balance).toString(),
-            totalAllocated: ethers.formatEther(balance).toString()
+            totalAllocated: ethers.formatEther(totalAllocated).toString()
           };
         
         
