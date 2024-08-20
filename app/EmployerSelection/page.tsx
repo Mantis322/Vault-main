@@ -3,14 +3,17 @@ import { useState, useEffect } from 'react';
 import Image from "next/image";
 import Link from 'next/link';
 import { useWallet } from '../../hooks/WalletContext';
+import { CONTRACT_ABI } from '../../hooks/WalletABI';
+import { CONTRACT_ADDRESS } from '../../hooks/ContractAdress';
 
 export default function EmployerVaultSelection() {
   const [selectedVault, setSelectedVault] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showVaultDetailsModal, setShowVaultDetailsModal] = useState(false);
   const [newVaultName, setNewVaultName] = useState('');
   const [creationStatus, setCreationStatus] = useState<'idle' | 'success' | 'fail'>('idle');
   const [createdVaultName, setCreatedVaultName] = useState('');
-  const { walletAddress, connectWallet, disconnectWallet } = useWallet();
+  const { walletAddress, provider, connectWallet, disconnectWallet } = useWallet();
 
   const vaults = [
     { id: 'EV001', name: 'Employer Vault Alpha', balance: '1000 ETH' },
@@ -35,6 +38,14 @@ export default function EmployerVaultSelection() {
       setCreationStatus('idle');
       setCreatedVaultName('');
     }, 3000);
+  };
+
+  const handleVaultDetailsModal = () => {
+    setShowVaultDetailsModal(true);
+  };
+
+  const handleCloseVaultDetailsModal = () => {
+    setShowVaultDetailsModal(false);
   };
 
   return (
@@ -120,15 +131,16 @@ export default function EmployerVaultSelection() {
             >
               + Create New Vault
             </button>
-            <Link href={selectedVault ? `/employer_vault/${selectedVault}` : '#'}
+            <button
               className={`px-4 py-2 rounded-lg transition-colors ${
                 selectedVault 
-                  ? 'bg-purple-600 hover:bg-purple-700' 
+                  ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer' 
                   : 'bg-gray-600 cursor-not-allowed'
               }`}
+              onClick={handleVaultDetailsModal}
             >
               Continue
-            </Link>
+              </button>
           </div>
         </div>
       </div>
@@ -165,6 +177,38 @@ export default function EmployerVaultSelection() {
             {creationStatus === 'fail' && (
               <p className="text-red-400">Failed to create vault. Please try again.</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {showVaultDetailsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-gray-900 p-8 rounded-lg w-96">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-2xl font-semibold">Vault Details</h3>
+              <button onClick={handleCloseVaultDetailsModal} className="text-gray-400 hover:text-white">
+                ✕
+              </button>
+            </div>
+            <div className="mb-4">
+              <p className="text-gray-400 mb-1">Vault Name:</p>
+              <p className="text-white">{vaults.find(vault => vault.id === selectedVault)?.name}</p>
+            </div>
+            <div className="mb-4">
+              <p className="text-gray-400 mb-1">Total Amount:</p>
+              <p className="text-white">{vaults.find(vault => vault.id === selectedVault)?.balance}</p>
+            </div>
+            <div className="mb-4">
+              <p className="text-gray-400 mb-1">Withdrawable Amount:</p>
+              <p className="text-white">750 ETH</p>
+            </div>
+            <div className="mb-4">
+              <p className="text-gray-400 mb-1">Allocated Amount:</p>
+              <p className="text-white">250 ETH</p>
+            </div>
+            <button className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700">
+              Operations
+            </button>
           </div>
         </div>
       )}
