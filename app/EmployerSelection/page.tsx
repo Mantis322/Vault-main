@@ -171,7 +171,7 @@ export default function EmployerVaultSelection() {
                   <h3 className="text-xl font-semibold">{vault.name}</h3>
                   <span className="text-sm text-purple-400">ID: {vault.id}</span>
                 </div>
-                <p className="text-gray-300">Balance: {vault.balance} EDU</p>
+                <p className="text-gray-300">Total Deposit: {vault.balance} EDU</p>
               </div>
             ))}
             <div className="flex justify-between mt-6">
