@@ -15,8 +15,7 @@ export default function EmployerVaultSelection() {
   const [creationStatus, setCreationStatus] = useState<'idle' | 'success' | 'fail'>('idle');
   const [createdVaultName, setCreatedVaultName] = useState('');
   const { walletAddress, provider, connectWallet, disconnectWallet } = useWallet();
-  const [loading, setLoading] = useState(false);
-  const [vaults, setVaults] = useState<Array<{ id: string, name: string, balance: string}>>([]);
+  const [vaults, setVaults] = useState<Array<{ id: string, name: string, balance: string, totalAllocated: string}>>([]);
 
   useEffect(() => {
     if (walletAddress && provider) {
@@ -30,7 +29,6 @@ export default function EmployerVaultSelection() {
       return;
     }
 
-    setLoading(true);
     try {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
@@ -42,7 +40,6 @@ export default function EmployerVaultSelection() {
       if (vaultNumbers.length === 0) {
         console.log("No vaults found for this employer");
         setVaults([]);
-        setLoading(false);
         return;
       }
   
@@ -50,13 +47,15 @@ export default function EmployerVaultSelection() {
         console.log("Fetching details for vault ID:", vaultId.toString());
         const name = await contract.getVaultName(vaultId);
         const balance = await contract.getTotalDeposit(vaultId);
+        const totalAllocated = await contract.getTotalAllocated(vaultId);
         
-        console.log(`Vault ${vaultId}: Name = ${name}, Balance = ${ethers.formatEther(balance)} ETH`);
+        console.log(`Vault ${vaultId}: Name = ${name}, Balance = ${ethers.formatEther(balance)} EDU`);
       
           return {
             id: vaultId.toString(),
             name: name,
-            balance: balance.toString()
+            balance: ethers.formatEther(balance).toString(),
+            totalAllocated: ethers.formatEther(balance).toString()
           };
         
         
@@ -67,8 +66,6 @@ export default function EmployerVaultSelection() {
       setVaults(vaultDetails);
     } catch (error) {
       console.error("Error fetching vaults:", error);
-    } finally {
-      setLoading(false);
     }
 
   };
@@ -174,7 +171,7 @@ export default function EmployerVaultSelection() {
                   <h3 className="text-xl font-semibold">{vault.name}</h3>
                   <span className="text-sm text-purple-400">ID: {vault.id}</span>
                 </div>
-                <p className="text-gray-300">Balance: {vault.balance}</p>
+                <p className="text-gray-300">Balance: {vault.balance} EDU</p>
               </div>
             ))}
             <div className="flex justify-between mt-6">
@@ -259,16 +256,16 @@ export default function EmployerVaultSelection() {
               <p className="text-white">{vaults.find(vault => vault.id === selectedVault)?.name}</p>
             </div>
             <div className="mb-4">
-              <p className="text-gray-400 mb-1">Total Amount:</p>
-              <p className="text-white">{vaults.find(vault => vault.id === selectedVault)?.balance}</p>
+              <p className="text-gray-400 mb-1">Total Deposit:</p>
+              <p className="text-white">{vaults.find(vault => vault.id === selectedVault)?.balance} EDU</p>
             </div>
             <div className="mb-4">
               <p className="text-gray-400 mb-1">Withdrawable Amount:</p>
-              <p className="text-white">750 ETH</p>
+              <p className="text-white">{vaults.find(vault => vault.id === selectedVault)?.balance} EDU</p>
             </div>
             <div className="mb-4">
               <p className="text-gray-400 mb-1">Allocated Amount:</p>
-              <p className="text-white">250 ETH</p>
+              <p className="text-white">{vaults.find(vault => vault.id === selectedVault)?.totalAllocated} EDU</p>
             </div>
             <button className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700">
               Operations

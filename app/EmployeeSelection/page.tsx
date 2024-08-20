@@ -48,14 +48,14 @@ export default function EmployeeSelection() {
         const employeeId = await contract.getVaultEmployeID(vaultId);
         const balance = await contract.getEmployeBalance(vaultId, employeeId);
         
-        console.log(`Vault ${vaultId}: Name = ${name}, Balance = ${ethers.formatEther(balance)} ETH`);
+        console.log(`Vault ${vaultId}: Name = ${name}, Balance = ${ethers.formatEther(balance)} EDU`);
         
-        // Sadece bakiyesi 0'dan büyük olan vault'ları döndür
+       
         if (Number(ethers.formatEther(balance)) > 0) {
           return {
             id: vaultId.toString(),
             name: name,
-            claimableBalance: ethers.formatEther(balance) + ' ETH',
+            claimableBalance: ethers.formatEther(balance) + ' EDU',
             claimableBalanceWei: balance.toString()
           };
         }
