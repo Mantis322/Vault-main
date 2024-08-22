@@ -24,6 +24,8 @@ export default function EmployerVaultSelection() {
   const [allocateError, setAllocateError] = useState('');
   const [showVaultInfoModal, setShowVaultInfoModal] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
+  const [isWithdraw, setIsWithdrawing] = useState(false);
+  const [withdrawError, setWithdrawError] = useState('');
 
 
   useEffect(() => {
@@ -142,10 +144,50 @@ export default function EmployerVaultSelection() {
     setShowVaultDetailsModal(false);
   };
 
-  const handleWithdraw = () => {
-    console.log(`Withdrawing ${withdrawAmount} EDU from ${selectedVault}`);
-    setWithdrawAmount('');
-    setShowVaultInfoModal(false);
+  const handleWithdraw = async () => {
+    const selectedVaultBalance = parseFloat(vaults.find(vault => vault.id === selectedVault)?.balance || '0');
+    
+    if (parseFloat(withdrawAmount) > selectedVaultBalance) {
+      setWithdrawError('Cannot withdraw more than the available balance.');
+      return;
+    }
+
+    setIsWithdrawing(true);
+
+    if (!provider || !walletAddress) {
+      console.log("Provider or wallet address is missing");
+      return;
+    }
+    let employerWithdrawFromContract;
+
+    try {
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+      employerWithdrawFromContract = await contract.employerWithdraw(selectedVault, ethers.parseEther(withdrawAmount));
+
+      await employerWithdrawFromContract.wait()
+
+
+      setWithdrawAmount('');
+      setWithdrawError('');
+
+      await fetchVaults();
+
+    
+      const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
+      if (updatedSelectedVault) {
+        setSelectedVault(updatedSelectedVault.id);
+      }
+
+    }catch (error) {
+      console.error("Error fetching vaults:", error);
+    } finally{
+      setIsWithdrawing(false);
+    }
+
+    
+    console.log(`Withdrawing ${withdrawAmount} EDU from ${vaults.find(vault => vault.id === selectedVault)?.name}`);
   };
 
   const handleDeposit = async () => {
@@ -184,8 +226,12 @@ export default function EmployerVaultSelection() {
     } catch (error) {
       console.error("Error depositing to vault:", error);
       // Hata durumunda kullanıcıya bilgi verebilirsiniz
+    }finally {
+      setIsDepositing(false);
     }
   };
+
+
   const handleAllocate = () => {
     
       console.log(`Allocating ${allocateAmount} EDU to ${allocateAddress} from ${selectedVault}`);
@@ -372,14 +418,18 @@ export default function EmployerVaultSelection() {
                 type="number"
                 className="w-full p-2 bg-gray-800 rounded-lg text-white mb-2"
                 value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
+                onChange={(e) => {setWithdrawAmount(e.target.value); setWithdrawError('')}}
                 placeholder="Enter amount to withdraw (EDU)"
-              />
+                />
+              {withdrawError && <p className="text-red-500 text-sm mb-2">{withdrawError}</p>}
               <button 
-                className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700"
+                className={`w-full text-white py-2 rounded hover:bg-green-700 disabled:bg-gray-500 ${
+                  withdrawError ? 'bg-gray-600 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
+                }`}
                 onClick={handleWithdraw}
+                disabled={!!withdrawError || isWithdraw}
               >
-                Withdraw
+                {isWithdraw ? 'Withdrawing...' : 'Withdraw'}
               </button>
             </div>
 
