@@ -16,6 +16,15 @@ export default function EmployerVaultSelection() {
   const [createdVaultName, setCreatedVaultName] = useState('');
   const { walletAddress, provider, connectWallet, disconnectWallet } = useWallet();
   const [vaults, setVaults] = useState<Array<{ id: string, name: string, balance: string, totalAllocated: string}>>([]);
+  const [nameError, setNameError] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [depositAmount, setDepositAmount] = useState('');
+  const [allocateAmount, setAllocateAmount] = useState('');
+  const [allocateAddress, setAllocateAddress] = useState('');
+  const [allocateError, setAllocateError] = useState('');
+  const [showVaultInfoModal, setShowVaultInfoModal] = useState(false);
+  const [isDepositing, setIsDepositing] = useState(false);
+
 
   useEffect(() => {
     if (walletAddress && provider) {
@@ -51,14 +60,12 @@ export default function EmployerVaultSelection() {
         
         console.log(`Vault ${vaultId}: Name = ${name}, Balance = ${ethers.formatEther(balance)} EDU`);
       
-          return {
-            id: vaultId.toString(),
-            name: name,
-            balance: ethers.formatEther(balance).toString(),
-            totalAllocated: ethers.formatEther(totalAllocated).toString()
-          };
-        
-        
+        return {
+          id: vaultId.toString(),
+          name: name,
+          balance: ethers.formatEther(balance).toString(),
+          totalAllocated: ethers.formatEther(totalAllocated).toString()
+        };
       });
   
       const vaultDetails = (await Promise.all(vaultPromises)).filter(vault => vault !== null);
@@ -67,26 +74,64 @@ export default function EmployerVaultSelection() {
     } catch (error) {
       console.error("Error fetching vaults:", error);
     }
-
   };
 
-  const handleCreateVault = () => {
-    // Simulate vault creation with 50% success rate
-    const isSuccess = Math.random() < 0.5;
-    setCreationStatus(isSuccess ? 'success' : 'fail');
+  const handleCreateVault = async () => {
+    if (!newVaultName.trim()) {
+      setNameError('Please enter a vault name');
+      return;
+    }
     
-    if (isSuccess) {
-      // Store the created vault name
-      setCreatedVaultName(newVaultName);
-      // In a real application, you would add the new vault to the list here
-      setNewVaultName('');
+    setNameError('');
+
+    if (!provider || !walletAddress) {
+      console.log("Provider or wallet address is missing");
+      return;
+    }
+    let vaultCreation;
+
+    try {
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+      vaultCreation = await contract.createNewVault(newVaultName);
+
+    }catch (error) {
+      console.error("Error fetching vaults:", error);
     }
 
-    // Reset status after 3 seconds
-    setTimeout(() => {
-      setCreationStatus('idle');
-      setCreatedVaultName('');
-    }, 3000);
+    await vaultCreation.wait();
+    // Simulate vault creation with 50% success rate
+    setCreationStatus(vaultCreation ? 'success' : 'fail');
+    
+    if (vaultCreation) {
+      // Store the created vault name
+      setCreatedVaultName(newVaultName);
+      
+      setNewVaultName('');
+      
+      // Automatically close the modal after a short delay
+      setTimeout(() => {
+        setShowModal(false);
+        setCreationStatus('idle');
+        setCreatedVaultName('');
+      }, 2000); // 2 seconds delay
+    } else {
+      // For failed creation, reset after 3 seconds
+      setTimeout(() => {
+        setCreationStatus('idle');
+        setCreatedVaultName('');
+      }, 3000);
+    }
+    fetchVaults();
+  };
+
+  const resetModal = () => {
+    setShowModal(false);
+    setCreationStatus('idle');
+    setCreatedVaultName('');
+    setNewVaultName('');
+    setNameError('');
   };
 
   const handleVaultDetailsModal = () => {
@@ -95,6 +140,60 @@ export default function EmployerVaultSelection() {
 
   const handleCloseVaultDetailsModal = () => {
     setShowVaultDetailsModal(false);
+  };
+
+  const handleWithdraw = () => {
+    console.log(`Withdrawing ${withdrawAmount} EDU from ${selectedVault}`);
+    setWithdrawAmount('');
+    setShowVaultInfoModal(false);
+  };
+
+  const handleDeposit = async () => {
+
+    setIsDepositing(true);
+
+    if (!provider || !walletAddress) {
+      console.log("Provider or wallet address is missing");
+      return;
+    }
+  
+    try {
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+  
+      const transaction = await contract.deposit(selectedVault, {value: ethers.parseEther(depositAmount)});
+  
+      // İşlemin tamamlanmasını bekleyin
+      await transaction.wait();
+  
+      console.log(`Deposited ${depositAmount} EDU to ${vaults.find(vault => vault.id === selectedVault)?.name}`);
+      
+      // Vault bilgilerini yenileyin
+      await fetchVaults();
+      
+      // Modal'ı kapatın ve deposit miktarını sıfırlayın
+      setShowVaultInfoModal(false);
+      setDepositAmount('');
+  
+      // Seçili vault'un detaylarını güncelleyin (eğer ayrı bir state tutuyorsanız)
+      const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
+      if (updatedSelectedVault) {
+        setSelectedVault(updatedSelectedVault.id);
+      }
+  
+    } catch (error) {
+      console.error("Error depositing to vault:", error);
+      // Hata durumunda kullanıcıya bilgi verebilirsiniz
+    }
+  };
+  const handleAllocate = () => {
+    
+      console.log(`Allocating ${allocateAmount} EDU to ${allocateAddress} from ${selectedVault}`);
+      setAllocateAmount('');
+      setAllocateAddress('');
+      setAllocateError('');
+      setShowVaultInfoModal(false);
+    
   };
 
   return (
@@ -207,11 +306,11 @@ export default function EmployerVaultSelection() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className={`bg-gray-900 p-8 rounded-lg w-96 ${creationStatus === 'success' ? 'success-galaxy' : ''}`}>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl font-semibold">Create New Vault</h3>
-              <button onClick={() => {setShowModal(false); setCreationStatus('idle'); setCreatedVaultName('');}} className="text-gray-400 hover:text-white">
+              <h3 className="text-2xl font-semibold text-purple-400">Create New Vault</h3>
+              <button onClick={resetModal} className="text-gray-400 hover:text-white">
                 ✕
               </button>
             </div>
@@ -220,56 +319,114 @@ export default function EmployerVaultSelection() {
                 <input 
                   type="text" 
                   placeholder="Enter vault name" 
-                  className="w-full p-2 mb-4 bg-gray-800 text-white rounded"
+                  className={`w-full p-2 mb-2 bg-gray-800 text-white rounded border ${
+                    nameError ? 'border-red-500' : 'border-purple-500'
+                  } focus:outline-none focus:border-purple-700`}
                   value={newVaultName}
-                  onChange={(e) => setNewVaultName(e.target.value)}
+                  onChange={(e) => {
+                    setNewVaultName(e.target.value);
+                    setNameError('');
+                  }}
                 />
+                {nameError && <p className="text-red-500 text-sm mb-2">{nameError}</p>}
                 <button 
-                  className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700"
+                  className={`w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 transition-colors ${
+                    !newVaultName.trim() ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                   onClick={handleCreateVault}
+                  disabled={!newVaultName.trim()}
                 >
                   Create
                 </button>
               </>
             )}
             {creationStatus === 'success' && (
-              <p className="text-green-400">Vault "{createdVaultName}" created successfully!</p>
+              <p className="text-green-400 text-center">Vault "{createdVaultName}" created successfully!</p>
             )}
             {creationStatus === 'fail' && (
-              <p className="text-red-400">Failed to create vault. Please try again.</p>
+              <p className="text-red-400 text-center">Failed to create vault. Please try again.</p>
             )}
           </div>
         </div>
       )}
 
       {showVaultDetailsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-gray-900 p-8 rounded-lg w-96">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-8 rounded-lg w-96 border border-purple-500">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl font-semibold">Vault Details</h3>
+              <h3 className="text-2xl font-semibold text-purple-400">Vault Details</h3>
               <button onClick={handleCloseVaultDetailsModal} className="text-gray-400 hover:text-white">
                 ✕
               </button>
             </div>
             <div className="mb-4">
-              <p className="text-gray-400 mb-1">Vault Name:</p>
-              <p className="text-white">{vaults.find(vault => vault.id === selectedVault)?.name}</p>
+              <p className="text-gray-400 mb-1">Vault Name: {vaults.find(vault => vault.id === selectedVault)?.name}</p>          
+              <p className="text-gray-400 mb-1">Total Deposit: {vaults.find(vault => vault.id === selectedVault)?.balance} EDU</p>         
+              <p className="text-gray-400 mb-1">Withdrawable Amount: {vaults.find(vault => vault.id === selectedVault)?.balance} EDU</p>
+              <p className="text-gray-400 mb-1">Allocated Amount: {vaults.find(vault => vault.id === selectedVault)?.totalAllocated} EDU</p>
             </div>
+            {/* Withdraw Section */}
             <div className="mb-4">
-              <p className="text-gray-400 mb-1">Total Deposit:</p>
-              <p className="text-white">{vaults.find(vault => vault.id === selectedVault)?.balance} EDU</p>
+              <h4 className="text-lg font-semibold mb-2">Withdraw</h4>
+              <input
+                type="number"
+                className="w-full p-2 bg-gray-800 rounded-lg text-white mb-2"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                placeholder="Enter amount to withdraw (EDU)"
+              />
+              <button 
+                className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700"
+                onClick={handleWithdraw}
+              >
+                Withdraw
+              </button>
             </div>
+
+            {/* Deposit Section */}
             <div className="mb-4">
-              <p className="text-gray-400 mb-1">Withdrawable Amount:</p>
-              <p className="text-white">{vaults.find(vault => vault.id === selectedVault)?.balance} EDU</p>
+              <h4 className="text-lg font-semibold mb-2">Deposit</h4>
+              <input
+                type="number"
+                className="w-full p-2 bg-gray-800 rounded-lg text-white mb-2"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                placeholder="Enter amount to deposit (EDU)"
+              />
+              <button 
+                className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:bg-gray-500"
+                onClick={handleDeposit}
+                disabled={isDepositing}
+              >
+                {isDepositing ? 'Depositing...' : 'Deposit'}
+              </button>
             </div>
+
+            {/* Allocate Section */}
             <div className="mb-4">
-              <p className="text-gray-400 mb-1">Allocated Amount:</p>
-              <p className="text-white">{vaults.find(vault => vault.id === selectedVault)?.totalAllocated} EDU</p>
+              <h4 className="text-lg font-semibold mb-2">Allocate</h4>
+              <input
+                type="text"
+                className="w-full p-2 bg-gray-800 rounded-lg text-white mb-2"
+                value={allocateAddress}
+                onChange={(e) => setAllocateAddress(e.target.value)}
+                placeholder="Enter address to allocate"
+              />
+              <input
+                type="number"
+                className="w-full p-2 bg-gray-800 rounded-lg text-white mb-2"
+                value={allocateAmount}
+                onChange={(e) => setAllocateAmount(e.target.value)}
+                placeholder="Enter amount to allocate (EDU)"
+              />
+              {allocateError && <p className="text-red-500 mb-2">{allocateError}</p>}
+              <button 
+                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                onClick={handleAllocate}
+              >
+                Allocate
+              </button>
             </div>
-            <button className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700">
-              Operations
-            </button>
           </div>
         </div>
       )}
