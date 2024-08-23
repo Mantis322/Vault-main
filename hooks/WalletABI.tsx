@@ -1,4 +1,4 @@
-export const CONTRACT_ABI = [
+export const CONTRACT_ABI =[
 	{
 		"inputs": [
 			{
@@ -193,6 +193,37 @@ export const CONTRACT_ABI = [
 		],
 		"name": "VaultCreated",
 		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_vaultId",
+				"type": "uint256"
+			}
+		],
+		"name": "getEmploye",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "employee_address",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "balance",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct TheVault.Employee[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
 	},
 	{
 		"inputs": [

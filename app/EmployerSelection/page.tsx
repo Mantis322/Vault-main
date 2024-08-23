@@ -15,17 +15,20 @@ export default function EmployerVaultSelection() {
   const [creationStatus, setCreationStatus] = useState<'idle' | 'success' | 'fail'>('idle');
   const [createdVaultName, setCreatedVaultName] = useState('');
   const { walletAddress, provider, connectWallet, disconnectWallet } = useWallet();
-  const [vaults, setVaults] = useState<Array<{ id: string, name: string, balance: string, totalAllocated: string}>>([]);
+  const [vaults, setVaults] = useState<Array<{ id: string, name: string, balance: string, totalAllocated: string }>>([]);
+  const [empoyee, setEmployee] = useState<Array<{ employeeAdress: string, balance: string }>>([]);
   const [nameError, setNameError] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
   const [allocateAmount, setAllocateAmount] = useState('');
   const [allocateAddress, setAllocateAddress] = useState('');
   const [allocateError, setAllocateError] = useState('');
-  const [showVaultInfoModal, setShowVaultInfoModal] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
   const [isWithdraw, setIsWithdrawing] = useState(false);
+  const [isAllocating, setIsAllocating] = useState(false);
   const [withdrawError, setWithdrawError] = useState('');
+  const [processStatus, setProcessStatus] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
 
   useEffect(() => {
@@ -36,32 +39,27 @@ export default function EmployerVaultSelection() {
 
   const fetchVaults = async () => {
     if (!provider || !walletAddress) {
-      console.log("Provider or wallet address is missing");
       return;
     }
 
     try {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-      
-      console.log("Calling getEmployeerVaultNumbers for address:", walletAddress);
+
       const vaultNumbers = await contract.getEmployerVaultNumbers();
-      console.log("Received vault numbers:", vaultNumbers);
-  
+
       if (vaultNumbers.length === 0) {
-        console.log("No vaults found for this employer");
         setVaults([]);
         return;
       }
-  
+
       const vaultPromises = vaultNumbers.map(async (vaultId: Number) => {
-        console.log("Fetching details for vault ID:", vaultId.toString());
         const name = await contract.getVaultName(vaultId);
         const balance = await contract.getTotalDeposit(vaultId);
         const totalAllocated = await contract.getTotalAllocated(vaultId);
-        
+
         console.log(`Vault ${vaultId}: Name = ${name}, Balance = ${ethers.formatEther(balance)} EDU`);
-      
+
         return {
           id: vaultId.toString(),
           name: name,
@@ -69,9 +67,9 @@ export default function EmployerVaultSelection() {
           totalAllocated: ethers.formatEther(totalAllocated).toString()
         };
       });
-  
+
       const vaultDetails = (await Promise.all(vaultPromises)).filter(vault => vault !== null);
-      console.log("All vault details:", vaultDetails);
+
       setVaults(vaultDetails);
     } catch (error) {
       console.error("Error fetching vaults:", error);
@@ -83,7 +81,7 @@ export default function EmployerVaultSelection() {
       setNameError('Please enter a vault name');
       return;
     }
-    
+
     setNameError('');
 
     if (!provider || !walletAddress) {
@@ -98,21 +96,19 @@ export default function EmployerVaultSelection() {
 
       vaultCreation = await contract.createNewVault(newVaultName);
 
-    }catch (error) {
+    } catch (error) {
       console.error("Error fetching vaults:", error);
     }
 
     await vaultCreation.wait();
-    // Simulate vault creation with 50% success rate
     setCreationStatus(vaultCreation ? 'success' : 'fail');
-    
+
     if (vaultCreation) {
-      // Store the created vault name
+
       setCreatedVaultName(newVaultName);
-      
+
       setNewVaultName('');
-      
-      // Automatically close the modal after a short delay
+
       setTimeout(() => {
         setShowModal(false);
         setCreationStatus('idle');
@@ -146,7 +142,7 @@ export default function EmployerVaultSelection() {
 
   const handleWithdraw = async () => {
     const selectedVaultBalance = parseFloat(vaults.find(vault => vault.id === selectedVault)?.balance || '0');
-    
+
     if (parseFloat(withdrawAmount) > selectedVaultBalance) {
       setWithdrawError('Cannot withdraw more than the available balance.');
       return;
@@ -155,7 +151,7 @@ export default function EmployerVaultSelection() {
     setIsWithdrawing(true);
 
     if (!provider || !walletAddress) {
-      console.log("Provider or wallet address is missing");
+      setAllocateError('An error occurred during the process. Please try again.');
       return;
     }
     let employerWithdrawFromContract;
@@ -174,19 +170,19 @@ export default function EmployerVaultSelection() {
 
       await fetchVaults();
 
-    
+
       const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
       if (updatedSelectedVault) {
         setSelectedVault(updatedSelectedVault.id);
       }
 
-    }catch (error) {
-      console.error("Error fetching vaults:", error);
-    } finally{
+    } catch (error) {
+      setAllocateError('An error occurred during the process. Please try again.');
+    } finally {
       setIsWithdrawing(false);
     }
 
-    
+
     console.log(`Withdrawing ${withdrawAmount} EDU from ${vaults.find(vault => vault.id === selectedVault)?.name}`);
   };
 
@@ -195,51 +191,121 @@ export default function EmployerVaultSelection() {
     setIsDepositing(true);
 
     if (!provider || !walletAddress) {
-      console.log("Provider or wallet address is missing");
+      setAllocateError('An error occurred during the process. Please try again.');
       return;
     }
-  
+
     try {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-  
-      const transaction = await contract.deposit(selectedVault, {value: ethers.parseEther(depositAmount)});
-  
-      // İşlemin tamamlanmasını bekleyin
+
+
+      const transaction = await contract.deposit(selectedVault, { value: ethers.parseEther(depositAmount) });
+
+
       await transaction.wait();
-  
+
       console.log(`Deposited ${depositAmount} EDU to ${vaults.find(vault => vault.id === selectedVault)?.name}`);
-      
-      // Vault bilgilerini yenileyin
+
+
       await fetchVaults();
-      
-      // Modal'ı kapatın ve deposit miktarını sıfırlayın
-      setShowVaultInfoModal(false);
+
       setDepositAmount('');
-  
-      // Seçili vault'un detaylarını güncelleyin (eğer ayrı bir state tutuyorsanız)
+
+
       const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
       if (updatedSelectedVault) {
         setSelectedVault(updatedSelectedVault.id);
       }
-  
+
     } catch (error) {
-      console.error("Error depositing to vault:", error);
-      // Hata durumunda kullanıcıya bilgi verebilirsiniz
-    }finally {
+      setAllocateError('An error occurred during the process. Please try again.');
+
+    } finally {
       setIsDepositing(false);
     }
   };
 
 
-  const handleAllocate = () => {
-    
-      console.log(`Allocating ${allocateAmount} EDU to ${allocateAddress} from ${selectedVault}`);
-      setAllocateAmount('');
-      setAllocateAddress('');
-      setAllocateError('');
-      setShowVaultInfoModal(false);
-    
+  const handleAllocate = async () => {
+    setIsAllocating(true);
+    setAllocateError('');
+
+    if (!provider || !walletAddress) {
+      setAllocateError('An error occurred during the process. Please try again.');
+      return;
+    }
+
+    try {
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+      setProcessStatus('Checking employee status...');
+      const employees = await contract.getEmploye(selectedVault);
+      const isEmployeeExists = employees.some((emp: { employee_address: string; }) => emp.employee_address.toLowerCase() === allocateAddress.toLowerCase());
+
+      if (!isEmployeeExists) {
+        setShowConfirmModal(true);
+        setIsAllocating(false);
+        return;
+      }
+
+      await performAllocation(contract);
+
+    } catch (error) {
+      setAllocateError('An error occurred during the process. Please try again.');
+    } finally {
+      setIsAllocating(false);
+    }
+  };
+
+  const addEmployee = async () => {
+    setShowConfirmModal(false);
+    setIsAllocating(true);
+    if (!provider || !walletAddress) {
+      console.log("Provider or wallet address is missing");
+      return;
+    }
+
+    try {
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+      setProcessStatus("Adding employee to the vault...")
+      console.log("Adding employee to the vault...");
+      const addEmployeeTx = await contract.addEmployee(selectedVault, allocateAddress);
+      await addEmployeeTx.wait();
+      console.log("Employee added successfully");
+
+      await performAllocation(contract);
+    } catch (error) {
+      setAllocateError('An error occurred during the process. Please try again.');
+    } finally {
+      setIsAllocating(false);
+      setProcessStatus('');
+    }
+
+  }
+
+  const performAllocation = async (contract: ethers.Contract) => {
+    setProcessStatus('Allocating funds...');
+    const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress);
+    const allocateTx = await contract.allocateToEmployee(selectedVault, ethers.parseEther(allocateAmount), employeeId);
+    await allocateTx.wait();
+
+    console.log(`Allocated ${allocateAmount} EDU to ${allocateAddress} from ${vaults.find(vault => vault.id === selectedVault)?.name}`);
+
+    await fetchVaults();
+
+    setAllocateAmount('');
+    setAllocateAddress('');
+
+
+    const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
+    if (updatedSelectedVault) {
+      setSelectedVault(updatedSelectedVault.id);
+    }
+    setProcessStatus('');
   };
 
   return (
@@ -271,17 +337,17 @@ export default function EmployerVaultSelection() {
             radial-gradient(rgba(80,250,123,.4), rgba(80,250,123,.1) 2px, transparent 30px);
         }
       `}</style>
-      
+
       <header className="flex justify-between items-center p-6 bg-black bg-opacity-60 backdrop-blur-sm">
-      <Link href="/">
-        <h1 className="text-4xl font-bold tracking-wider text-purple-400" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-          VAULT
+        <Link href="/">
+          <h1 className="text-4xl font-bold tracking-wider text-purple-400" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+            VAULT
           </h1>
-          </Link>
+        </Link>
         {walletAddress ? (
           <div className="flex items-center">
             <span className="mr-4 text-purple-300">{`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}</span>
-            <button 
+            <button
               className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
               onClick={disconnectWallet}
             >
@@ -289,7 +355,7 @@ export default function EmployerVaultSelection() {
             </button>
           </div>
         ) : (
-          <button 
+          <button
             className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
             onClick={connectWallet}
           >
@@ -303,13 +369,12 @@ export default function EmployerVaultSelection() {
         {vaults.length > 0 ? (
           <div className="max-w-2xl mx-auto bg-black bg-opacity-70 p-6 rounded-lg">
             {vaults.map((vault) => (
-              <div 
+              <div
                 key={vault.id}
-                className={`p-4 mb-4 rounded-lg cursor-pointer transition-all ${
-                  selectedVault === vault.id 
-                    ? 'bg-purple-700' 
+                className={`p-4 mb-4 rounded-lg cursor-pointer transition-all ${selectedVault === vault.id
+                    ? 'bg-purple-700'
                     : 'bg-gray-800 hover:bg-gray-700'
-                }`}
+                  }`}
                 onClick={() => setSelectedVault(vault.id)}
               >
                 <div className="flex justify-between items-center mb-2">
@@ -320,18 +385,17 @@ export default function EmployerVaultSelection() {
               </div>
             ))}
             <div className="flex justify-between mt-6">
-              <button 
+              <button
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                 onClick={() => setShowModal(true)}
               >
                 + Create New Vault
               </button>
               <button
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  selectedVault 
-                    ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer' 
+                className={`px-4 py-2 rounded-lg transition-colors ${selectedVault
+                    ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer'
                     : 'bg-gray-600 cursor-not-allowed'
-                }`}
+                  }`}
                 onClick={handleVaultDetailsModal}
               >
                 Continue
@@ -341,7 +405,7 @@ export default function EmployerVaultSelection() {
         ) : (
           <div className="max-w-2xl mx-auto bg-black bg-opacity-70 p-6 rounded-lg text-center">
             <p>You don't have any Vaults yet. You can create a new Vault using the "Create New Vault" button.</p>
-            <button 
+            <button
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors mt-4"
               onClick={() => setShowModal(true)}
             >
@@ -362,12 +426,11 @@ export default function EmployerVaultSelection() {
             </div>
             {creationStatus === 'idle' && (
               <>
-                <input 
-                  type="text" 
-                  placeholder="Enter vault name" 
-                  className={`w-full p-2 mb-2 bg-gray-800 text-white rounded border ${
-                    nameError ? 'border-red-500' : 'border-purple-500'
-                  } focus:outline-none focus:border-purple-700`}
+                <input
+                  type="text"
+                  placeholder="Enter vault name"
+                  className={`w-full p-2 mb-2 bg-gray-800 text-white rounded border ${nameError ? 'border-red-500' : 'border-purple-500'
+                    } focus:outline-none focus:border-purple-700`}
                   value={newVaultName}
                   onChange={(e) => {
                     setNewVaultName(e.target.value);
@@ -375,10 +438,9 @@ export default function EmployerVaultSelection() {
                   }}
                 />
                 {nameError && <p className="text-red-500 text-sm mb-2">{nameError}</p>}
-                <button 
-                  className={`w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 transition-colors ${
-                    !newVaultName.trim() ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                <button
+                  className={`w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 transition-colors ${!newVaultName.trim() ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   onClick={handleCreateVault}
                   disabled={!newVaultName.trim()}
                 >
@@ -406,8 +468,8 @@ export default function EmployerVaultSelection() {
               </button>
             </div>
             <div className="mb-4">
-              <p className="text-gray-400 mb-1">Vault Name: {vaults.find(vault => vault.id === selectedVault)?.name}</p>          
-              <p className="text-gray-400 mb-1">Total Deposit: {vaults.find(vault => vault.id === selectedVault)?.balance} EDU</p>         
+              <p className="text-gray-400 mb-1">Vault Name: {vaults.find(vault => vault.id === selectedVault)?.name}</p>
+              <p className="text-gray-400 mb-1">Total Deposit: {vaults.find(vault => vault.id === selectedVault)?.balance} EDU</p>
               <p className="text-gray-400 mb-1">Withdrawable Amount: {vaults.find(vault => vault.id === selectedVault)?.balance} EDU</p>
               <p className="text-gray-400 mb-1">Allocated Amount: {vaults.find(vault => vault.id === selectedVault)?.totalAllocated} EDU</p>
             </div>
@@ -418,14 +480,13 @@ export default function EmployerVaultSelection() {
                 type="number"
                 className="w-full p-2 bg-gray-800 rounded-lg text-white mb-2"
                 value={withdrawAmount}
-                onChange={(e) => {setWithdrawAmount(e.target.value); setWithdrawError('')}}
+                onChange={(e) => { setWithdrawAmount(e.target.value); setWithdrawError('') }}
                 placeholder="Enter amount to withdraw (EDU)"
-                />
+              />
               {withdrawError && <p className="text-red-500 text-sm mb-2">{withdrawError}</p>}
-              <button 
-                className={`w-full text-white py-2 rounded hover:bg-green-700 disabled:bg-gray-500 ${
-                  withdrawError ? 'bg-gray-600 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
-                }`}
+              <button
+                className={`w-full text-white py-2 rounded hover:bg-green-700 disabled:bg-gray-500 ${withdrawError ? 'bg-gray-600 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
+                  }`}
                 onClick={handleWithdraw}
                 disabled={!!withdrawError || isWithdraw}
               >
@@ -443,7 +504,8 @@ export default function EmployerVaultSelection() {
                 onChange={(e) => setDepositAmount(e.target.value)}
                 placeholder="Enter amount to deposit (EDU)"
               />
-              <button 
+              {allocateError && <p className="text-red-500 mb-2">{allocateError}</p>}
+              <button
                 className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:bg-gray-500"
                 onClick={handleDeposit}
                 disabled={isDepositing}
@@ -470,11 +532,36 @@ export default function EmployerVaultSelection() {
                 placeholder="Enter amount to allocate (EDU)"
               />
               {allocateError && <p className="text-red-500 mb-2">{allocateError}</p>}
-              <button 
-                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+              <button
+                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-green-700 disabled:bg-gray-500"
                 onClick={handleAllocate}
+                disabled={isAllocating}
               >
-                Allocate
+                {isAllocating ? processStatus : 'Allocate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-8 rounded-lg w-96 border border-purple-500">
+            <h3 className="text-2xl font-semibold text-purple-400 mb-4">Confirm Action</h3>
+            <p className="text-white mb-6">
+              This address has not been added to the vault yet. Do you want to add it and then allocate funds? This will require two separate transactions.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                onClick={addEmployee}
+              >
+                Confirm
               </button>
             </div>
           </div>
