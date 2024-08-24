@@ -13,44 +13,57 @@ export default function EmployeeSelection() {
   const [loading, setLoading] = useState(false);
   const [claimLoading, setClaimLoading] = useState(false);
   const { walletAddress, provider, connectWallet, disconnectWallet } = useWallet();
+  const [balance, setBalance] = useState('');
 
   useEffect(() => {
     if (walletAddress && provider) {
       fetchVaults();
+      fetchBalance();
     }
   }, [walletAddress, provider]);
+
+  const fetchBalance = async () => {
+    if (provider && walletAddress) {
+      try {
+        const balance = await provider.getBalance(walletAddress);
+        setBalance(ethers.formatEther(balance));
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+      }
+    }
+  };
 
   const fetchVaults = async () => {
     if (!provider || !walletAddress) {
       console.log("Provider or wallet address is missing");
       return;
     }
-  
+
     setLoading(true);
     try {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-      
+
       console.log("Calling getEmployeeVaultNumbers for address:", walletAddress);
       const vaultNumbers = await contract.getEmployeeVaultNumbers();
       console.log("Received vault numbers:", vaultNumbers);
-  
+
       if (vaultNumbers.length === 0) {
         console.log("No vaults found for this employee");
         setVaults([]);
         setLoading(false);
         return;
       }
-  
+
       const vaultPromises = vaultNumbers.map(async (vaultId: Number) => {
         console.log("Fetching details for vault ID:", vaultId.toString());
         const name = await contract.getVaultName(vaultId);
         const employeeId = await contract.getVaultEmployeID(vaultId);
         const balance = await contract.getEmployeBalance(vaultId, employeeId);
-        
+
         console.log(`Vault ${vaultId}: Name = ${name}, Balance = ${ethers.formatEther(balance)} EDU`);
-        
-       
+
+
         if (Number(ethers.formatEther(balance)) > 0) {
           return {
             id: vaultId.toString(),
@@ -61,7 +74,7 @@ export default function EmployeeSelection() {
         }
         return null;
       });
-  
+
       const vaultDetails = (await Promise.all(vaultPromises)).filter(vault => vault !== null);
       console.log("All vault details:", vaultDetails);
       setVaults(vaultDetails);
@@ -69,6 +82,34 @@ export default function EmployeeSelection() {
       console.error("Error fetching vaults:", error);
     } finally {
       setLoading(false);
+    }
+
+    await fetchBalance();
+  };
+
+  const addOpenCampusNetwork = async () => {
+    if (window.ethereum) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0xa045c',
+            chainName: 'Open Campus Codex Sepolia',
+            nativeCurrency: {
+              name: 'EDU',
+              symbol: 'EDU',
+              decimals: 18
+            },
+            rpcUrls: ['https://open-campus-codex-sepolia.drpc.org'],
+            blockExplorerUrls: ['https://opencampus-codex.blockscout.com']
+          }]
+        });
+        console.log('Open Campus network added to MetaMask');
+      } catch (error) {
+        console.error('Failed to add Open Campus network:', error);
+      }
+    } else {
+      console.log('MetaMask is not installed');
     }
   };
 
@@ -131,25 +172,33 @@ export default function EmployeeSelection() {
           100% { background-position: 550px 550px, 390px 410px, 380px 820px, 220px 650px; }
         }
       `}</style>
-      
+
       <header className="flex justify-between items-center p-6 bg-black bg-opacity-60 backdrop-blur-sm">
-      <Link href="/">
-        <h1 className="text-4xl font-bold tracking-wider text-purple-400" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-          VAULT
-        </h1>
+        <Link href="/">
+          <h1 className="text-4xl font-bold tracking-wider text-purple-400" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+            VAULT
+          </h1>
         </Link>
         {walletAddress ? (
           <div className="flex items-center">
-            <span className="mr-4 text-purple-300">{`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}</span>
-            <button 
+
+            <span className="mr-4 text-purple-300">{`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)} | ${parseFloat(balance).toFixed(4)} EDU`}</span>
+            <button
               className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
               onClick={disconnectWallet}
             >
               Disconnect
+            </button>&nbsp;&nbsp;
+
+            <button
+              className="mr-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              onClick={addOpenCampusNetwork}
+            >
+              Connect OC Network
             </button>
           </div>
         ) : (
-          <button 
+          <button
             className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
             onClick={connectWallet}
           >
@@ -157,7 +206,7 @@ export default function EmployeeSelection() {
           </button>
         )}
       </header>
-        
+
       <div className="flex-1 galaxy-bg p-12">
         <h2 className="text-3xl font-semibold mb-8 text-center">Select Employee Vault to Claim</h2>
         <div className="max-w-2xl mx-auto bg-black bg-opacity-70 p-6 rounded-lg">
@@ -168,13 +217,12 @@ export default function EmployeeSelection() {
           ) : (
             <>
               {vaults.map((vault) => (
-                <div 
+                <div
                   key={vault.id}
-                  className={`p-4 mb-4 rounded-lg cursor-pointer transition-all ${
-                    selectedVault === vault.id 
-                      ? 'bg-purple-700' 
+                  className={`p-4 mb-4 rounded-lg cursor-pointer transition-all ${selectedVault === vault.id
+                      ? 'bg-purple-700'
                       : 'bg-gray-800 hover:bg-gray-700'
-                  }`}
+                    }`}
                   onClick={() => setSelectedVault(vault.id)}
                 >
                   <div className="flex justify-between items-center mb-2">
@@ -184,12 +232,11 @@ export default function EmployeeSelection() {
                   <p className="text-gray-300">Claimable Balance: {vault.claimableBalance}</p>
                 </div>
               ))}
-              <button 
-                className={`w-full mt-6 py-2 rounded-lg transition-colors ${
-                  selectedVault && !claimLoading
-                    ? 'bg-purple-600 hover:bg-purple-700' 
+              <button
+                className={`w-full mt-6 py-2 rounded-lg transition-colors ${selectedVault && !claimLoading
+                    ? 'bg-purple-600 hover:bg-purple-700'
                     : 'bg-gray-600 cursor-not-allowed'
-                }`}
+                  }`}
                 disabled={!selectedVault || claimLoading}
                 onClick={handleClaim}
               >

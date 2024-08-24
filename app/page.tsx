@@ -4,9 +4,37 @@ import Link from 'next/link';
 import { useWallet } from '../hooks/WalletContext';
 
 
+
+
 export default function Home() {
   const [hoveredSection, setHoveredSection] = useState<'employer' | 'employee' | null>(null);
   const { walletAddress, connectWallet, disconnectWallet } = useWallet();
+
+  const addOpenCampusNetwork = async () => {
+    if (window.ethereum) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0xa045c',
+            chainName: 'Open Campus Codex Sepolia',
+            nativeCurrency: {
+              name: 'EDU',
+              symbol: 'EDU',
+              decimals: 18
+            },
+            rpcUrls: ['https://open-campus-codex-sepolia.drpc.org'],
+            blockExplorerUrls: ['https://opencampus-codex.blockscout.com']
+          }]
+        });
+        console.log('Open Campus network added to MetaMask');
+      } catch (error) {
+        console.error('Failed to add Open Campus network:', error);
+      }
+    } else {
+      console.log('MetaMask is not installed');
+    }
+  };
 
   return (
     <main className="min-h-screen flex flex-col text-white bg-black">
@@ -37,23 +65,33 @@ export default function Home() {
           background-color: rgba(128, 0, 128, 0.2);
         }
       `}</style>
-      
+
       <header className="flex justify-between items-center p-6 bg-black bg-opacity-60 backdrop-blur-sm">
-        <h1 className="text-4xl font-bold tracking-wider text-purple-400" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-          VAULT
-        </h1>
+        <Link href="/">
+          <h1 className="text-4xl font-bold tracking-wider text-purple-400" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+            VAULT
+          </h1>
+        </Link>
         {walletAddress ? (
           <div className="flex items-center">
+
             <span className="mr-4 text-purple-300">{`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}</span>
-            <button 
+            <button
               className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
               onClick={disconnectWallet}
             >
               Disconnect
+            </button>&nbsp;&nbsp;
+
+            <button
+              className="mr-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              onClick={addOpenCampusNetwork}
+            >
+              Connect OC Network
             </button>
           </div>
         ) : (
-          <button 
+          <button
             className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
             onClick={connectWallet}
           >

@@ -29,13 +29,26 @@ export default function EmployerVaultSelection() {
   const [withdrawError, setWithdrawError] = useState('');
   const [processStatus, setProcessStatus] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [balance, setBalance] = useState('');
 
 
   useEffect(() => {
     if (walletAddress && provider) {
       fetchVaults();
+      fetchBalance();
     }
   }, [walletAddress, provider]);
+
+  const fetchBalance = async () => {
+    if (provider && walletAddress) {
+      try {
+        const balance = await provider.getBalance(walletAddress);
+        setBalance(ethers.formatEther(balance));
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+      }
+    }
+  };
 
   const fetchVaults = async () => {
     if (!provider || !walletAddress) {
@@ -74,6 +87,8 @@ export default function EmployerVaultSelection() {
     } catch (error) {
       console.error("Error fetching vaults:", error);
     }
+
+    await fetchBalance();
   };
 
   const handleCreateVault = async () => {
@@ -308,6 +323,32 @@ export default function EmployerVaultSelection() {
     setProcessStatus('');
   };
 
+  const addOpenCampusNetwork = async () => {
+    if (window.ethereum) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0xa045c',
+            chainName: 'Open Campus Codex Sepolia',
+            nativeCurrency: {
+              name: 'EDU',
+              symbol: 'EDU',
+              decimals: 18
+            },
+            rpcUrls: ['https://open-campus-codex-sepolia.drpc.org'],
+            blockExplorerUrls: ['https://opencampus-codex.blockscout.com']
+          }]
+        });
+        console.log('Open Campus network added to MetaMask');
+      } catch (error) {
+        console.error('Failed to add Open Campus network:', error);
+      }
+    } else {
+      console.log('MetaMask is not installed');
+    }
+  };
+
   return (
     <main className="min-h-screen flex flex-col text-white bg-black">
       <style jsx global>{`
@@ -346,12 +387,20 @@ export default function EmployerVaultSelection() {
         </Link>
         {walletAddress ? (
           <div className="flex items-center">
-            <span className="mr-4 text-purple-300">{`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}</span>
+
+            <span className="mr-4 text-purple-300">{`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)} | ${parseFloat(balance).toFixed(4)} EDU`}</span>
             <button
               className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
               onClick={disconnectWallet}
             >
               Disconnect
+            </button>&nbsp;&nbsp;
+
+            <button
+              className="mr-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              onClick={addOpenCampusNetwork}
+            >
+              Connect OC Network
             </button>
           </div>
         ) : (
@@ -372,8 +421,8 @@ export default function EmployerVaultSelection() {
               <div
                 key={vault.id}
                 className={`p-4 mb-4 rounded-lg cursor-pointer transition-all ${selectedVault === vault.id
-                    ? 'bg-purple-700'
-                    : 'bg-gray-800 hover:bg-gray-700'
+                  ? 'bg-purple-700'
+                  : 'bg-gray-800 hover:bg-gray-700'
                   }`}
                 onClick={() => setSelectedVault(vault.id)}
               >
@@ -393,8 +442,8 @@ export default function EmployerVaultSelection() {
               </button>
               <button
                 className={`px-4 py-2 rounded-lg transition-colors ${selectedVault
-                    ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer'
-                    : 'bg-gray-600 cursor-not-allowed'
+                  ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer'
+                  : 'bg-gray-600 cursor-not-allowed'
                   }`}
                 onClick={handleVaultDetailsModal}
               >
