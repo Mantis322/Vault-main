@@ -37,10 +37,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const address = await signer.getAddress();
         setWalletAddress(address);
       } catch (error) {
-        console.error("Cüzdan bağlantısı başarısız oldu:", error);
+        console.error("Wallet connection failed:", error);
       }
     } else {
-      console.error("MetaMask yüklü değil!");
+      console.error("MetaMask is not installed!");
     }
   };
 
