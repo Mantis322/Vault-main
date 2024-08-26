@@ -17,9 +17,10 @@ https://github.com/user-attachments/assets/446cc1ee-d4ee-42f8-b741-ce9e6ad4ae78
 - [Getting Started](#getting-started)
 - [Use Cases](#use-cases)
 - [Technical Architecture](#technical-architecture)
+- [Installation](#installation)
 - [Contributing](#contributing)
 - [License](#license)
-- [Installation](#installation)
+
 
 ## About Vault
 
