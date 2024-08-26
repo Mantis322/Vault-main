@@ -60,7 +60,7 @@ Our mission is to provide fast, secure, and cost-effective financial solutions f
 Vault leverages the power of EDU Chain to facilitate seamless financial transactions:
 
 1. Users create a Vault account linked to their EDU Chain wallet
-2. Funds can be deposited via  cryptocurrency
+2. Funds can be deposited via cryptocurrency
 3. Payments are processed instantly using smart contracts
 4. Transactions are recorded on the blockchain, ensuring transparency and security
 
