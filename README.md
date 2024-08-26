@@ -67,7 +67,7 @@ Vault leverages the power of EDU Chain to facilitate seamless financial transact
 
 To start using Vault:
 
-1. Visit [https://vault-sooty.vercel.app/]https://vault-sooty.vercel.app/)
+1. Visit [https://vault-sooty.vercel.app/](https://vault-sooty.vercel.app/)
 2. Link your EDU Chain wallet
 3. Start transacting!
 
