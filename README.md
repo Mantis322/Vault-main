@@ -77,7 +77,7 @@ To start using Vault:
 - Institutions managing staff and supplier payments
 - Education professionals collecting consulting fees
 
-## 📥 Installation
+## Installation
 
 - Clone the repository
 
