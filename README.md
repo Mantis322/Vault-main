@@ -100,6 +100,6 @@ We welcome contributions from the community!
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE.md).
+This project is licensed under the [GNU GENERAL PUBLIC LICENSE](LICENSE.md).
 
 Join us in revolutionizing education finance with Vault!
