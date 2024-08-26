@@ -108,11 +108,11 @@ export default function Home() {
             onMouseLeave={() => setHoveredSection(null)}
           >
             <h2 className="text-4xl font-semibold mb-6 transition-all duration-300 group-hover:text-purple-400">
-              Employer
+              Scholarship & Salary Handling
             </h2>
             <p className="text-center max-w-md">
-              Streamline your payroll process with our cutting-edge blockchain solution.
-              Manage payments securely and efficiently.
+              Manage scholarships and teacher payments securely and transparently with blockchain technology.
+              See the impact of your contributions instantly.
             </p>
             <span className="mt-6 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               Click to continue →
@@ -129,11 +129,11 @@ export default function Home() {
             onMouseLeave={() => setHoveredSection(null)}
           >
             <h2 className="text-4xl font-semibold mb-6 transition-all duration-300 group-hover:text-purple-400">
-              Employee
+              Student / Teacher
             </h2>
             <p className="text-center max-w-md">
-              Receive your payments instantly and securely. Track your earnings and manage
-              your finances with ease.
+              Receive your scholarships or payments instantly and securely. Track your earnings
+              and manage your finances with ease.
             </p>
             <span className="mt-6 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               Click to continue →

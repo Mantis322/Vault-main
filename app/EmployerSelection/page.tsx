@@ -16,7 +16,6 @@ export default function EmployerVaultSelection() {
   const [createdVaultName, setCreatedVaultName] = useState('');
   const { walletAddress, provider, connectWallet, disconnectWallet } = useWallet();
   const [vaults, setVaults] = useState<Array<{ id: string, name: string, balance: string, totalAllocated: string }>>([]);
-  const [empoyee, setEmployee] = useState<Array<{ employeeAdress: string, balance: string }>>([]);
   const [nameError, setNameError] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
@@ -414,7 +413,7 @@ export default function EmployerVaultSelection() {
       </header>
 
       <div className="flex-1 galaxy-bg p-12">
-        <h2 className="text-3xl font-semibold mb-8 text-center">Select or Create Employer Vault</h2>
+        <h2 className="text-3xl font-semibold mb-8 text-center">Select or Create Vault</h2>
         {vaults.length > 0 ? (
           <div className="max-w-2xl mx-auto bg-black bg-opacity-70 p-6 rounded-lg">
             {vaults.map((vault) => (

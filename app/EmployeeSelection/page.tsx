@@ -208,7 +208,7 @@ export default function EmployeeSelection() {
       </header>
 
       <div className="flex-1 galaxy-bg p-12">
-        <h2 className="text-3xl font-semibold mb-8 text-center">Select Employee Vault to Claim</h2>
+        <h2 className="text-3xl font-semibold mb-8 text-center">Select Vault to Claim</h2>
         <div className="max-w-2xl mx-auto bg-black bg-opacity-70 p-6 rounded-lg">
           {loading ? (
             <p className="text-center">Loading vaults...</p>
