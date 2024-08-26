@@ -38,8 +38,9 @@ Our mission is to provide fast, secure, and cost-effective financial solutions f
 - 💸 Minimal transaction fees
 - 🌍 Cross-border transactions without limitations
 - 🔒 Enhanced security through blockchain technology
-- 🔗 Cross-chain compatibility (coming soon)
 - 💱 Multi-currency support including USDC (in development)
+- 🔗 Cross-chain compatibility (coming soon)
+- 📊 Dashboard to track payments (coming soon)
 
 ## Traditional Banking vs. Vault
 
