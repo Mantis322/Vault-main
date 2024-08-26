@@ -132,7 +132,7 @@ export default function Home() {
               Student / Teacher
             </h2>
             <p className="text-center max-w-md">
-              Receive your scholarships or payments instantly and securely. Track your earnings
+              Claim your scholarships or payments instantly and securely. Track your earnings
               and manage your finances with ease.
             </p>
             <span className="mt-6 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
