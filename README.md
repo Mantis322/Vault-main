@@ -10,13 +10,12 @@ https://github.com/user-attachments/assets/446cc1ee-d4ee-42f8-b741-ce9e6ad4ae78
 
 ## Table of Contents
 - [About Vault](#about-vault)
-- [Smart Contract Adress](#smart-contract-adress)
+- [Smart Contract Address](#smart-contract-address)
 - [Features](#features)
 - [Traditional Banking vs. Vault](#traditional-banking-vs-vault)
 - [How It Works](#how-it-works)
 - [Getting Started](#getting-started)
 - [Use Cases](#use-cases)
-- [Technical Architecture](#technical-architecture)
 - [Installation](#installation)
 - [Contributing](#contributing)
 - [License](#license)
@@ -31,7 +30,7 @@ Vault is a revolutionary blockchain-based financial platform designed specifical
 
 Our mission is to provide fast, secure, and cost-effective financial solutions for students, educators, institutions, and education sector employees worldwide.
 
-## Smart Contract Adress
+## Smart Contract Address
 
 [0x0816659EC840A1766a67e1320A837c3e40db0A41](https://opencampus-codex.blockscout.com/address/0x0816659EC840A1766a67e1320A837c3e40db0A41)
 
