@@ -24,6 +24,9 @@ https://github.com/user-attachments/assets/446cc1ee-d4ee-42f8-b741-ce9e6ad4ae78
 
 ## About Vault
 
+<img width="850" src="https://github.com/user-attachments/assets/79ea4a9e-ab02-4a12-b56a-2fc6de516996">
+
+
 Vault is a revolutionary blockchain-based financial platform designed specifically for the education sector. Built on the EDU Chain network, Vault aims to transform how financial transactions are conducted in the global education ecosystem.
 
 Our mission is to provide fast, secure, and cost-effective financial solutions for students, educators, institutions, and education sector employees worldwide.
@@ -38,9 +41,8 @@ Our mission is to provide fast, secure, and cost-effective financial solutions f
 - 💸 Minimal transaction fees
 - 🌍 Cross-border transactions without limitations
 - 🔒 Enhanced security through blockchain technology
-- 💱 Multi-currency support including USDC (in development)
 - 🔗 Cross-chain compatibility (coming soon)
-- 📊 Dashboard to track payments (coming soon)
+- 💱 Multi-currency support including USDC (in development)
 
 ## Traditional Banking vs. Vault
 
