@@ -265,6 +265,7 @@ export default function EmployerVaultSelection() {
       }
 
     setProcessStatus('Allocating funds...');
+    console.log("Allocating funds...")
     const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress);
     console.log(employeeId)
     const allocateTx = await contract.allocateToEmployee(selectedVault, ethers.parseEther(allocateAmount), employeeId);
