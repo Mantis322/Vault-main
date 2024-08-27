@@ -298,6 +298,7 @@ export default function EmployerVaultSelection() {
     } finally {
       setIsAllocating(false);
       setProcessStatus('');
+      await fetchVaults();
     }
 
   }
