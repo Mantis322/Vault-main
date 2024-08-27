@@ -304,41 +304,69 @@ export default function EmployerVaultSelection() {
 
   const performAllocation = async (contract: ethers.Contract) => {
     setProcessStatus('Allocating funds...');
-    try {
-      // Önce employeeId'yi alalım
-      const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress);
-      console.log('Employee ID:', employeeId.toString()); // ID'yi konsola yazdırıyoruz
-  
-      // Şimdi allocateToEmployee fonksiyonunu çağıralım
-      const allocateTx = await contract.allocateToEmployee(
-        selectedVault,
-        ethers.parseEther(allocateAmount),
-        employeeId
-      );
-      
-      // İşlem onayını bekleyelim
-      await allocateTx.wait();
-  
-      console.log(`Allocated ${allocateAmount} EDU to ${allocateAddress} from ${vaults.find(vault => vault.id === selectedVault)?.name}`);
-  
-      // Vaultları yeniden yükleyelim
-      await fetchVaults();
-  
-      // State'i temizleyelim
-      setAllocateAmount('');
-      setAllocateAddress('');
-  
-      // Seçili vault'u güncelleyelim
-      const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
-      if (updatedSelectedVault) {
-        setSelectedVault(updatedSelectedVault.id);
-      }
-    } catch (error) {
-      console.error('Allocation error:', error);
-      setAllocateError('An error occurred during allocation. Please check the console for details.');
-    } finally {
-      setProcessStatus('');
+  try {
+    console.log('Selected Vault:', selectedVault);
+    console.log('Allocate Address:', allocateAddress);
+    console.log('Allocate Amount:', allocateAmount);
+
+    // Önce employeeId'yi alalım
+    const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress);
+    console.log('Employee ID:', employeeId.toString());
+
+    // Vault bakiyesini kontrol edelim
+    const vaultBalance = await contract.getTotalDeposit(selectedVault);
+    console.log('Vault Balance:', ethers.utils.formatEther(vaultBalance));
+
+    // Şimdi allocateToEmployee fonksiyonunu çağıralım
+    const allocateAmount = ethers.utils.parseEther(allocateAmount);
+    console.log('Allocate Amount (Wei):', allocateAmount.toString());
+
+    // Gas limit'i artıralım
+    const gasEstimate = await contract.estimateGas.allocateToEmployee(selectedVault, allocateAmount, employeeId);
+    const gasLimit = gasEstimate.mul(120).div(100); // %20 artış
+
+    const allocateTx = await contract.allocateToEmployee(
+      selectedVault,
+      allocateAmount,
+      employeeId,
+      { gasLimit }
+    );
+    
+    console.log('Transaction sent:', allocateTx.hash);
+
+    // İşlem onayını bekleyelim
+    const receipt = await allocateTx.wait();
+    console.log('Transaction confirmed:', receipt);
+
+    console.log(`Allocated ${ethers.utils.formatEther(allocateAmount)} EDU to ${allocateAddress} from ${vaults.find(vault => vault.id === selectedVault)?.name}`);
+
+    // Vaultları yeniden yükleyelim
+    await fetchVaults();
+
+    // State'i temizleyelim
+    setAllocateAmount('');
+    setAllocateAddress('');
+
+    // Seçili vault'u güncelleyelim
+    const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
+    if (updatedSelectedVault) {
+      setSelectedVault(updatedSelectedVault.id);
     }
+  } catch (error) {
+    console.error('Allocation error:', error);
+    if (error.reason) {
+      console.error('Error reason:', error.reason);
+    }
+    if (error.code) {
+      console.error('Error code:', error.code);
+    }
+    if (error.transaction) {
+      console.error('Error transaction:', error.transaction);
+    }
+    setAllocateError('An error occurred during allocation. Please check the console for details.');
+  } finally {
+    setProcessStatus('');
+  }
   };
 
   const addOpenCampusNetwork = async () => {
