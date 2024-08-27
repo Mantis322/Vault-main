@@ -84,7 +84,7 @@ To start using Vault:
 
 - Clone the repository
 
-```git clone https://github.com/your-username/vault.git```
+```git clone https://github.com/Mantis322/Vault-main.git```
 
 - Navigate to the project directory
 
