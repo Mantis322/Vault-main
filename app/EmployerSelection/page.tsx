@@ -265,7 +265,7 @@ export default function EmployerVaultSelection() {
         return;
       }
 
-      await performAllocation(contract);
+      await performAllocation();
 
     } catch (error) {
       setAllocateError('An error occurred during the process. Please try again.');
@@ -291,7 +291,7 @@ export default function EmployerVaultSelection() {
       const addEmployeeTx = await contract.addEmployee(selectedVault, allocateAddress);
       await addEmployeeTx.wait();
       
-      await performAllocation(contract)
+      await performAllocation()
 
     } catch (error) {
       setAllocateError('An error occurred during the process. Please try again.');
@@ -302,9 +302,18 @@ export default function EmployerVaultSelection() {
 
   }
 
-  const performAllocation = async (contract: ethers.Contract) => {
+  const performAllocation = async () => {
     setProcessStatus('Allocating funds...');
+
+    if (!provider || !walletAddress) {
+      console.log("Provider or wallet address is missing");
+      return;
+    }
+
     try {
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
       // Önce employeeId'yi alalım
       const gasEstimate = await contract.getVaultEmployeIDForEmployer.estimateGas(selectedVault, allocateAddress);
       console.log('Employee ID:', gasEstimate.toString()); // ID'yi konsola yazdırıyoruz
