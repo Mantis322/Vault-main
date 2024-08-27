@@ -265,7 +265,7 @@ export default function EmployerVaultSelection() {
         return;
       }
 
-      await performAllocation();
+      await performAllocation(contract);
 
     } catch (error) {
       setAllocateError('An error occurred during the process. Please try again.');
@@ -291,7 +291,7 @@ export default function EmployerVaultSelection() {
       const addEmployeeTx = await contract.addEmployee(selectedVault, allocateAddress);
       await addEmployeeTx.wait();
       
-      await performAllocation()
+      await performAllocation(contract)
 
     } catch (error) {
       setAllocateError('An error occurred during the process. Please try again.');
@@ -302,45 +302,26 @@ export default function EmployerVaultSelection() {
 
   }
 
-  const performAllocation = async () => {
+  const performAllocation = async (contract: ethers.Contract) => {
     setProcessStatus('Allocating funds...');
-
-    if (!provider || !walletAddress) {
-      console.log("Provider or wallet address is missing");
-      return;
-    }
-
     try {
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-      // Önce employeeId'yi alalım
-      const gasEstimate = await contract.getVaultEmployeIDForEmployer.estimateGas(selectedVault, allocateAddress);
-      console.log('Employee ID:', gasEstimate.toString()); // ID'yi konsola yazdırıyoruz
-      const gasLimit: bigint = gasEstimate + ((gasEstimate * BigInt(20)) / BigInt(100));
-
-      const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress, { gasLimit });
-
-      // Şimdi allocateToEmployee fonksiyonunu çağıralım
+      const employeeId = await contract.getVaultEmployeeIDForEmployer(selectedVault, allocateAddress);
+  
       const allocateTx = await contract.allocateToEmployee(
         selectedVault,
         ethers.parseEther(allocateAmount),
         employeeId
       );
       
-      // İşlem onayını bekleyelim
       await allocateTx.wait();
   
       console.log(`Allocated ${allocateAmount} EDU to ${allocateAddress} from ${vaults.find(vault => vault.id === selectedVault)?.name}`);
   
-      // Vaultları yeniden yükleyelim
       await fetchVaults();
   
-      // State'i temizleyelim
       setAllocateAmount('');
       setAllocateAddress('');
   
-      // Seçili vault'u güncelleyelim
       const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
       if (updatedSelectedVault) {
         setSelectedVault(updatedSelectedVault.id);
