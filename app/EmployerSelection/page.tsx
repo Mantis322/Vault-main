@@ -286,7 +286,7 @@ export default function EmployerVaultSelection() {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-      setProcessStatus("Adding employee to the vault...")
+      setProcessStatus("Adding address to the vault...")
       
       const addEmployeeTx = await contract.addEmployee(selectedVault, allocateAddress);
       await addEmployeeTx.wait();
