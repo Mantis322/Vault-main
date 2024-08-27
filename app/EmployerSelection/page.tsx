@@ -314,11 +314,13 @@ export default function EmployerVaultSelection() {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-      console.log("Contracta bağlandı")
+      // Önce employeeId'yi alalım
+      const gasEstimate = await contract.getVaultEmployeIDForEmployer.estimateGas(selectedVault, allocateAddress);
+      console.log('Employee ID:', gasEstimate.toString()); // ID'yi konsola yazdırıyoruz
+      const gasLimit: bigint = gasEstimate + ((gasEstimate * BigInt(20)) / BigInt(100));
 
-      const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress);
+      const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress, { gasLimit });
 
-      console.log("Tx başlıyor")
       // Şimdi allocateToEmployee fonksiyonunu çağıralım
       const allocateTx = await contract.allocateToEmployee(
         selectedVault,
