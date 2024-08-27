@@ -255,7 +255,7 @@ export default function EmployerVaultSelection() {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-      setProcessStatus('Checking employee status...');
+      setProcessStatus('Checking address status...');
       const employees = await contract.getEmploye(selectedVault);
       const isEmployeeExists = employees.some((emp: { employee_address: string; }) => emp.employee_address.toLowerCase() === allocateAddress.toLowerCase());
 
