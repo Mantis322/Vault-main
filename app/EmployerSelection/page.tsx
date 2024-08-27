@@ -291,7 +291,7 @@ export default function EmployerVaultSelection() {
       const addEmployeeTx = await contract.addEmployee(selectedVault, allocateAddress);
       await addEmployeeTx.wait();
       
-
+      await performAllocation(contract);
 
     } catch (error) {
       setAllocateError('An error occurred during the process. Please try again.');
@@ -304,23 +304,41 @@ export default function EmployerVaultSelection() {
 
   const performAllocation = async (contract: ethers.Contract) => {
     setProcessStatus('Allocating funds...');
-    const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress);
-    const allocateTx = await contract.allocateToEmployee(selectedVault, ethers.parseEther(allocateAmount), employeeId);
-    await allocateTx.wait();
-
-    console.log(`Allocated ${allocateAmount} EDU to ${allocateAddress} from ${vaults.find(vault => vault.id === selectedVault)?.name}`);
-
-    await fetchVaults();
-
-    setAllocateAmount('');
-    setAllocateAddress('');
-
-
-    const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
-    if (updatedSelectedVault) {
-      setSelectedVault(updatedSelectedVault.id);
+    try {
+      // Önce employeeId'yi alalım
+      const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress);
+      console.log('Employee ID:', employeeId.toString()); // ID'yi konsola yazdırıyoruz
+  
+      // Şimdi allocateToEmployee fonksiyonunu çağıralım
+      const allocateTx = await contract.allocateToEmployee(
+        selectedVault,
+        ethers.parseEther(allocateAmount),
+        employeeId
+      );
+      
+      // İşlem onayını bekleyelim
+      await allocateTx.wait();
+  
+      console.log(`Allocated ${allocateAmount} EDU to ${allocateAddress} from ${vaults.find(vault => vault.id === selectedVault)?.name}`);
+  
+      // Vaultları yeniden yükleyelim
+      await fetchVaults();
+  
+      // State'i temizleyelim
+      setAllocateAmount('');
+      setAllocateAddress('');
+  
+      // Seçili vault'u güncelleyelim
+      const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
+      if (updatedSelectedVault) {
+        setSelectedVault(updatedSelectedVault.id);
+      }
+    } catch (error) {
+      console.error('Allocation error:', error);
+      setAllocateError('An error occurred during allocation. Please check the console for details.');
+    } finally {
+      setProcessStatus('');
     }
-    setProcessStatus('');
   };
 
   const addOpenCampusNetwork = async () => {
