@@ -21,6 +21,7 @@ export default function EmployerVaultSelection() {
   const [depositAmount, setDepositAmount] = useState('');
   const [allocateAmount, setAllocateAmount] = useState('');
   const [allocateAddress, setAllocateAddress] = useState('');
+  const [depositError, setDepositError] = useState('');
   const [allocateError, setAllocateError] = useState('');
   const [isDepositing, setIsDepositing] = useState(false);
   const [isWithdraw, setIsWithdrawing] = useState(false);
@@ -205,7 +206,7 @@ export default function EmployerVaultSelection() {
     setIsDepositing(true);
 
     if (!provider || !walletAddress) {
-      setAllocateError('An error occurred during the process. Please try again.');
+      setDepositError('An error occurred during the process. Please try again.');
       return;
     }
 
@@ -233,7 +234,7 @@ export default function EmployerVaultSelection() {
       }
 
     } catch (error) {
-      setAllocateError('An error occurred during the process. Please try again.');
+      setDepositError('An error occurred during the process. Please try again.');
 
     } finally {
       setIsDepositing(false);
@@ -552,7 +553,7 @@ export default function EmployerVaultSelection() {
                 onChange={(e) => setDepositAmount(e.target.value)}
                 placeholder="Enter amount to deposit (EDU)"
               />
-              {allocateError && <p className="text-red-500 mb-2">{allocateError}</p>}
+              {depositError && <p className="text-red-500 mb-2">{depositError}</p>}
               <button
                 className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:bg-gray-500"
                 onClick={handleDeposit}
