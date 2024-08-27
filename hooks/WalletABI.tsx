@@ -1,85 +1,4 @@
-export const CONTRACT_ABI =[
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "employeeAdress",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "to",
-				"type": "uint256"
-			}
-		],
-		"name": "AddressAdded",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "depositer",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "Deposit",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "recepient",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "FundsRetrieved",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "creator",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "vaultId",
-				"type": "uint256"
-			}
-		],
-		"name": "VaultCreated",
-		"type": "event"
-	},
+export const CONTRACT_ABI = [
 	{
 		"inputs": [
 			{
@@ -122,6 +41,30 @@ export const CONTRACT_ABI =[
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "employeeAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "vaultId",
+				"type": "uint256"
+			}
+		],
+		"name": "AddressAdded",
+		"type": "event"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "string",
@@ -152,6 +95,25 @@ export const CONTRACT_ABI =[
 		"outputs": [],
 		"stateMutability": "payable",
 		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "depositor",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Deposit",
+		"type": "event"
 	},
 	{
 		"inputs": [
@@ -193,6 +155,44 @@ export const CONTRACT_ABI =[
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "recipient",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "FundsRetrieved",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "vaultId",
+				"type": "uint256"
+			}
+		],
+		"name": "VaultCreated",
+		"type": "event"
 	},
 	{
 		"inputs": [
@@ -238,7 +238,7 @@ export const CONTRACT_ABI =[
 				"type": "uint256"
 			}
 		],
-		"name": "getEmployeBalance",
+		"name": "getEmployeeBalance",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -321,7 +321,7 @@ export const CONTRACT_ABI =[
 				"type": "uint256"
 			}
 		],
-		"name": "getVaultEmployeID",
+		"name": "getVaultEmployeeID",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -341,7 +341,7 @@ export const CONTRACT_ABI =[
 			},
 			{
 				"internalType": "address",
-				"name": "_employeeAdress",
+				"name": "_employeeAddress",
 				"type": "address"
 			}
 		],

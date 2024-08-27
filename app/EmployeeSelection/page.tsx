@@ -58,8 +58,8 @@ export default function EmployeeSelection() {
       const vaultPromises = vaultNumbers.map(async (vaultId: Number) => {
         console.log("Fetching details for vault ID:", vaultId.toString());
         const name = await contract.getVaultName(vaultId);
-        const employeeId = await contract.getVaultEmployeID(vaultId);
-        const balance = await contract.getEmployeBalance(vaultId, employeeId);
+        const employeeId = await contract.getVaultEmployeeID(vaultId);
+        const balance = await contract.getEmployeeBalance(vaultId, employeeId);
 
         console.log(`Vault ${vaultId}: Name = ${name}, Balance = ${ethers.formatEther(balance)} EDU`);
 
@@ -129,7 +129,7 @@ export default function EmployeeSelection() {
         throw new Error("Selected vault data not found");
       }
 
-      const employeeId = await contract.getVaultEmployeID(selectedVault);
+      const employeeId = await contract.getVaultEmployeeID(selectedVault);
       console.log("Employee ID:", employeeId.toString());
 
       const tx = await contract.employeeWithdraw(
