@@ -261,29 +261,11 @@ export default function EmployerVaultSelection() {
 
       if (!isEmployeeExists) {
         setShowConfirmModal(true);
+        setIsAllocating(false);
         return;
       }
 
-    setProcessStatus('Allocating funds...');
-    console.log("Allocating funds...")
-    const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress);
-    console.log(employeeId)
-    const allocateTx = await contract.allocateToEmployee(selectedVault, ethers.parseEther(allocateAmount), employeeId);
-    await allocateTx.wait();
-
-    console.log(`Allocated ${allocateAmount} EDU to ${allocateAddress} from ${vaults.find(vault => vault.id === selectedVault)?.name}`);
-
-    await fetchVaults();
-
-    setAllocateAmount('');
-    setAllocateAddress('');
-
-
-    const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
-    if (updatedSelectedVault) {
-      setSelectedVault(updatedSelectedVault.id);
-    }
-    setProcessStatus('');
+      await performAllocation(contract);
 
     } catch (error) {
       setAllocateError('An error occurred during the process. Please try again.');
@@ -294,6 +276,7 @@ export default function EmployerVaultSelection() {
 
   const addEmployee = async () => {
     setShowConfirmModal(false);
+    setIsAllocating(true);
     if (!provider || !walletAddress) {
       console.log("Provider or wallet address is missing");
       return;
@@ -318,6 +301,27 @@ export default function EmployerVaultSelection() {
     }
 
   }
+
+  const performAllocation = async (contract: ethers.Contract) => {
+    setProcessStatus('Allocating funds...');
+    const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress);
+    const allocateTx = await contract.allocateToEmployee(selectedVault, ethers.parseEther(allocateAmount), employeeId);
+    await allocateTx.wait();
+
+    console.log(`Allocated ${allocateAmount} EDU to ${allocateAddress} from ${vaults.find(vault => vault.id === selectedVault)?.name}`);
+
+    await fetchVaults();
+
+    setAllocateAmount('');
+    setAllocateAddress('');
+
+
+    const updatedSelectedVault = vaults.find(vault => vault.id === selectedVault);
+    if (updatedSelectedVault) {
+      setSelectedVault(updatedSelectedVault.id);
+    }
+    setProcessStatus('');
+  };
 
   const addOpenCampusNetwork = async () => {
     if (window.ethereum) {
