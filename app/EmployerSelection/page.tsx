@@ -261,50 +261,12 @@ export default function EmployerVaultSelection() {
 
       if (!isEmployeeExists) {
         setShowConfirmModal(true);
-        setIsAllocating(false);
         return;
       }
 
-      await performAllocation(contract);
-
-    } catch (error) {
-      setAllocateError('An error occurred during the process. Please try again.');
-    } finally {
-      setIsAllocating(false);
-    }
-  };
-
-  const addEmployee = async () => {
-    setShowConfirmModal(false);
-    setIsAllocating(true);
-    if (!provider || !walletAddress) {
-      console.log("Provider or wallet address is missing");
-      return;
-    }
-
-    try {
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-      setProcessStatus("Adding employee to the vault...")
-      console.log("Adding employee to the vault...");
-      const addEmployeeTx = await contract.addEmployee(selectedVault, allocateAddress);
-      await addEmployeeTx.wait();
-      console.log("Employee added successfully");
-
-      await performAllocation(contract);
-    } catch (error) {
-      setAllocateError('An error occurred during the process. Please try again.');
-    } finally {
-      setIsAllocating(false);
-      setProcessStatus('');
-    }
-
-  }
-
-  const performAllocation = async (contract: ethers.Contract) => {
     setProcessStatus('Allocating funds...');
     const employeeId = await contract.getVaultEmployeIDForEmployer(selectedVault, allocateAddress);
+    console.log(employeeId)
     const allocateTx = await contract.allocateToEmployee(selectedVault, ethers.parseEther(allocateAmount), employeeId);
     await allocateTx.wait();
 
@@ -321,7 +283,40 @@ export default function EmployerVaultSelection() {
       setSelectedVault(updatedSelectedVault.id);
     }
     setProcessStatus('');
+
+    } catch (error) {
+      setAllocateError('An error occurred during the process. Please try again.');
+    } finally {
+      setIsAllocating(false);
+    }
   };
+
+  const addEmployee = async () => {
+    setShowConfirmModal(false);
+    if (!provider || !walletAddress) {
+      console.log("Provider or wallet address is missing");
+      return;
+    }
+
+    try {
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+      setProcessStatus("Adding employee to the vault...")
+      
+      const addEmployeeTx = await contract.addEmployee(selectedVault, allocateAddress);
+      await addEmployeeTx.wait();
+      
+
+
+    } catch (error) {
+      setAllocateError('An error occurred during the process. Please try again.');
+    } finally {
+      setIsAllocating(false);
+      setProcessStatus('');
+    }
+
+  }
 
   const addOpenCampusNetwork = async () => {
     if (window.ethereum) {
