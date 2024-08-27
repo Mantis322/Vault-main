@@ -27,7 +27,7 @@ Vault is a revolutionary blockchain-based financial platform designed specifical
 Our mission is to provide fast, secure, and cost-effective financial solutions for students, educators, institutions, and education sector employees worldwide.
 
 ## Smart Contract Address
-[0x0816659EC840A1766a67e1320A837c3e40db0A41](https://opencampus-codex.blockscout.com/address/0x0816659EC840A1766a67e1320A837c3e40db0A41)
+[0xeFCBcc9A744b393084d9E2234ee27a09020D3CC6](https://opencampus-codex.blockscout.com/address/0xeFCBcc9A744b393084d9E2234ee27a09020D3CC6)
 
 ## Features
 - ⚡ Instant global payments
